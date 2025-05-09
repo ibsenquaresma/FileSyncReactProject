@@ -25,7 +25,21 @@ let FileSystemService = class FileSystemService {
         const onlyInA = filesA.filter(file => !filesB.includes(file));
         const onlyInB = filesB.filter(file => !filesA.includes(file));
         const inBoth = filesA.filter(file => filesB.includes(file));
-        return { onlyInA, onlyInB, inBoth };
+        console.log(onlyInA);
+        console.log(onlyInB);
+        console.log(inBoth);
+        const result = {
+            onlyInA,
+            onlyInB,
+            inBoth,
+            counts: {
+                onlyInA: onlyInA.length,
+                onlyInB: onlyInB.length,
+                inBoth: inBoth.length,
+                total: onlyInA.length + onlyInB.length + inBoth.length,
+            },
+        };
+        return result;
     }
     copyFiles(fromFolder, toFolder, files) {
         console.log('start');
@@ -44,6 +58,27 @@ let FileSystemService = class FileSystemService {
         });
         console.log(results);
         return results;
+    }
+    copyFilesWithProgress(files, from, to) {
+        const copied = [];
+        const errors = [];
+        for (const file of files) {
+            try {
+                const sourcePath = path.join(from, file);
+                const targetPath = path.join(to, file);
+                fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+                fs.copyFileSync(sourcePath, targetPath);
+                copied.push(file);
+            }
+            catch (err) {
+                errors.push(file);
+            }
+        }
+        return {
+            copied,
+            errors,
+            total: files.length
+        };
     }
 };
 exports.FileSystemService = FileSystemService;

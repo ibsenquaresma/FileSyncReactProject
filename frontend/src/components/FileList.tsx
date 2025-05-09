@@ -21,7 +21,7 @@ export default function FileList({ title, files, onToggle, from, setFrom, onCopy
         )}
         {from && setFrom && (
           <button onClick={() => setFrom(from === 'A' ? 'B' : 'A')} className="text-sm text-blue-500">
-            Alternar de {from === 'A' ? 'Pasta A' : 'Pasta B'}
+            Alternar de {from === 'A' ? 'Pasta Virtual' : 'Pasta HD Externo'}
           </button>
         )}
       </div>

@@ -14,6 +14,12 @@ export declare class FileSystemController {
         onlyInA: string[];
         onlyInB: string[];
         inBoth: string[];
+        counts: {
+            onlyInA: number;
+            onlyInB: number;
+            inBoth: number;
+            total: number;
+        };
     };
     copyFiles(body: {
         files: string[];
