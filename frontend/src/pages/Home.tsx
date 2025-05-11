@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import FolderInput from '../components/FolderInput';
 import FileList from '../components/FileList';
 import { toast } from 'react-toastify';
@@ -55,7 +55,7 @@ export default function Home() {
           files: selectedFiles, 
           from, 
           to: from === 'A' ? 'B' : 'A',
-          includeSubfolders, // Aqui
+          includeSubfolders,
         }),
     });
     await res.json();
@@ -79,7 +79,7 @@ export default function Home() {
           { files: [file],
             from: source,
             to: source === 'A' ? 'B' : 'A',
-            includeSubfolders, // Aqui também
+            includeSubfolders,
           }),
       });
       setProgress(Math.round(((i + 1) / fileList.length) * 100));
