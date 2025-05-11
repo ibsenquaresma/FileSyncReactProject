@@ -27,13 +27,14 @@ let FileSystemController = class FileSystemController {
         this.folderB = body.folderB;
         return { message: 'Folders set successfully.' };
     }
-    compare() {
-        return this.fsService.compareFolders(this.folderA, this.folderB);
+    compare(recursive) {
+        const isRecursive = recursive === 'true';
+        return this.fsService.compareFolders(this.folderA, this.folderB, isRecursive);
     }
     copyFiles(body) {
         const from = body.from === 'A' ? this.folderA : this.folderB;
         const to = body.to === 'A' ? this.folderA : this.folderB;
-        return this.fsService.copyFiles(from, to, body.files);
+        return this.fsService.copyFiles(from, to, body.files, body.includeSubfolders);
     }
 };
 exports.FileSystemController = FileSystemController;
@@ -46,8 +47,9 @@ __decorate([
 ], FileSystemController.prototype, "setFolders", null);
 __decorate([
     (0, common_1.Get)('compare'),
+    __param(0, (0, common_1.Query)('recursive')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], FileSystemController.prototype, "compare", null);
 __decorate([

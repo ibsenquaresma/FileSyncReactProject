@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { FileSystemService } from './file-system.service';
 
 @Controller('fs')
@@ -16,14 +16,23 @@ export class FileSystemController {
   }
 
   @Get('compare')
-  compare() {
-    return this.fsService.compareFolders(this.folderA, this.folderB);
+  compare(@Query('recursive') recursive?: string) {
+    const isRecursive = recursive === 'true';
+
+    return this.fsService.compareFolders(this.folderA, this.folderB, isRecursive);
   }
 
   @Post('copy')
-  copyFiles(@Body() body: { files: string[]; from: 'A' | 'B'; to: 'A' | 'B' }) {
+  copyFiles(
+    @Body() body: {
+      files: string[];
+      from: 'A' | 'B';
+      to: 'A' | 'B';
+      includeSubfolders?: boolean;
+    }
+  ) {
     const from = body.from === 'A' ? this.folderA : this.folderB;
     const to = body.to === 'A' ? this.folderA : this.folderB;
-    return this.fsService.copyFiles(from, to, body.files);
+    return this.fsService.copyFiles(from, to, body.files, body.includeSubfolders);
   }
 }

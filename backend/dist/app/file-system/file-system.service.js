@@ -11,24 +11,68 @@ const common_1 = require("@nestjs/common");
 const fs = require("fs");
 const path = require("path");
 let FileSystemService = class FileSystemService {
-    listFiles(folder) {
+    listFiles(folder, recursive = false) {
+        const fileList = [];
+        const walk = (currentPath, basePath) => {
+            const items = fs.readdirSync(currentPath);
+            for (const item of items) {
+                const fullPath = path.join(currentPath, item);
+                const relativePath = path.relative(basePath, fullPath);
+                const stats = fs.statSync(fullPath);
+                if (stats.isFile()) {
+                    fileList.push(relativePath);
+                }
+                else if (recursive && stats.isDirectory()) {
+                    walk(fullPath, basePath);
+                }
+            }
+        };
         try {
-            return fs.readdirSync(folder).filter(file => fs.statSync(path.join(folder, file)).isFile());
+            walk(folder, folder);
+            return fileList;
         }
         catch (err) {
             return [];
         }
     }
-    compareFolders(folderA, folderB) {
-        const filesA = this.listFiles(folderA);
-        const filesB = this.listFiles(folderB);
-        const onlyInA = filesA.filter(file => !filesB.includes(file));
-        const onlyInB = filesB.filter(file => !filesA.includes(file));
-        const inBoth = filesA.filter(file => filesB.includes(file));
-        console.log(onlyInA);
-        console.log(onlyInB);
-        console.log(inBoth);
-        const result = {
+    safeStat(fullPath) {
+        try {
+            return fs.statSync(fullPath);
+        }
+        catch (err) {
+            console.warn('Erro ao acessar:', fullPath, err.message);
+            return null;
+        }
+    }
+    walkDirectory(dir, includeSubfolders) {
+        const files = [];
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            const stat = this.safeStat(fullPath);
+            if (!stat) {
+                console.warn(`Ignorado (sem permissão ou online-only): ${fullPath}`);
+                continue;
+            }
+            if (entry.isFile()) {
+                files.push(fullPath);
+            }
+            else if (includeSubfolders && entry.isDirectory()) {
+                files.push(...this.walkDirectory(fullPath, includeSubfolders));
+            }
+        }
+        return files;
+    }
+    compareFolders(folderA, folderB, recursive = false) {
+        const filesA = this.walkDirectory(folderA, true).map(f => path.relative(folderA, f));
+        const filesB = this.walkDirectory(folderB, true).map(f => path.relative(folderB, f));
+        const setA = new Set(filesA);
+        const setB = new Set(filesB);
+        const onlyInA = filesA.filter(f => !setB.has(f));
+        const onlyInB = filesB.filter(f => !setA.has(f));
+        const inBoth = filesA.filter(f => setB.has(f));
+        console.log(setA);
+        return {
             onlyInA,
             onlyInB,
             inBoth,
@@ -39,24 +83,42 @@ let FileSystemService = class FileSystemService {
                 total: onlyInA.length + onlyInB.length + inBoth.length,
             },
         };
-        return result;
     }
-    copyFiles(fromFolder, toFolder, files) {
-        console.log('start');
+    copyFiles(fromFolder, toFolder, files, includeSubfolders = false) {
         const results = [];
+        const copyRecursive = (srcPath, destPath) => {
+            const stat = fs.statSync(srcPath);
+            if (stat.isDirectory()) {
+                fs.mkdirSync(destPath, { recursive: true });
+                const subFiles = fs.readdirSync(srcPath);
+                subFiles.forEach(subFile => {
+                    copyRecursive(path.join(srcPath, subFile), path.join(destPath, subFile));
+                });
+            }
+            else {
+                fs.mkdirSync(path.dirname(destPath), { recursive: true });
+                fs.copyFileSync(srcPath, destPath);
+            }
+        };
         files.forEach(file => {
             const fromPath = path.join(fromFolder, file);
             const toPath = path.join(toFolder, file);
             try {
-                console.log('push');
-                fs.copyFileSync(fromPath, toPath);
+                if (includeSubfolders) {
+                    copyRecursive(fromPath, toPath);
+                }
+                else {
+                    if (fs.statSync(fromPath).isFile()) {
+                        fs.mkdirSync(path.dirname(toPath), { recursive: true });
+                        fs.copyFileSync(fromPath, toPath);
+                    }
+                }
                 results.push({ file, success: true });
             }
             catch (error) {
                 results.push({ file, success: false, error: error.message });
             }
         });
-        console.log(results);
         return results;
     }
     copyFilesWithProgress(files, from, to) {

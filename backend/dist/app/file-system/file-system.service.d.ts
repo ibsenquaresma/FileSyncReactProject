@@ -1,6 +1,8 @@
 export declare class FileSystemService {
-    listFiles(folder: string): string[];
-    compareFolders(folderA: string, folderB: string): {
+    listFiles(folder: string, recursive?: boolean): string[];
+    private safeStat;
+    private walkDirectory;
+    compareFolders(folderA: string, folderB: string, recursive?: boolean): {
         onlyInA: string[];
         onlyInB: string[];
         inBoth: string[];
@@ -11,7 +13,7 @@ export declare class FileSystemService {
             total: number;
         };
     };
-    copyFiles(fromFolder: string, toFolder: string, files: string[]): {
+    copyFiles(fromFolder: string, toFolder: string, files: string[], includeSubfolders?: boolean): {
         file: string;
         success: boolean;
         error?: string;

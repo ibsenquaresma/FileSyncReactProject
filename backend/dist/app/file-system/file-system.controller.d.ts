@@ -10,7 +10,7 @@ export declare class FileSystemController {
     }): {
         message: string;
     };
-    compare(): {
+    compare(recursive?: string): {
         onlyInA: string[];
         onlyInB: string[];
         inBoth: string[];
@@ -25,6 +25,7 @@ export declare class FileSystemController {
         files: string[];
         from: 'A' | 'B';
         to: 'A' | 'B';
+        includeSubfolders?: boolean;
     }): {
         file: string;
         success: boolean;

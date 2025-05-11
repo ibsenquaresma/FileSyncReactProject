@@ -32,7 +32,9 @@ export default function Home() {
   };
 
   const compare = async () => {
-    const res = await fetch('http://localhost:3000/fs/compare');
+    const res = await fetch(
+      `http://localhost:3000/fs/compare?recursive=${includeSubfolders ? 'true' : 'false'}`,
+    );
     const data = await res.json();
     setComparison(data);
     toast.info(`Comparação concluída: ${data.onlyInA.length + data.onlyInB.length} arquivos encontrados`);
@@ -53,7 +55,7 @@ export default function Home() {
           files: selectedFiles, 
           from, 
           to: from === 'A' ? 'B' : 'A',
-            includeSubfolders,
+          includeSubfolders, // Aqui
         }),
     });
     await res.json();
@@ -77,7 +79,7 @@ export default function Home() {
           { files: [file],
             from: source,
             to: source === 'A' ? 'B' : 'A',
-            includeSubfolders, 
+            includeSubfolders, // Aqui também
           }),
       });
       setProgress(Math.round(((i + 1) / fileList.length) * 100));
@@ -95,20 +97,21 @@ export default function Home() {
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">📂 FolderSync</h1>
 
+      {/* Checkbox para incluir subpastas */}
       <div className="flex items-center gap-2 mt-2">
-      <input
-        type="checkbox"
-        id="includeSubfolders"
-        checked={includeSubfolders}
-        onChange={(e) => setIncludeSubfolders(e.target.checked)}
-        className="w-4 h-4"
-      />
-      <label htmlFor="includeSubfolders" className="text-sm text-gray-700">
-        Incluir subpastas
-      </label>
-    </div>
+        <input
+          type="checkbox"
+          id="includeSubfolders"
+          checked={includeSubfolders}
+          onChange={(e) => setIncludeSubfolders(e.target.checked)}
+          className="w-4 h-4"
+        />
+        <label htmlFor="includeSubfolders" className="text-sm text-gray-700">
+          Incluir subpastas
+        </label>
+      </div>
 
-
+      {/* Input para as pastas */}
       <FolderInput label="Onedrive Google Drive etc" value={folderA} onChange={setFolderA} />
       <FolderInput label="HD Externo" value={folderB} onChange={setFolderB} />
 
@@ -118,31 +121,44 @@ export default function Home() {
         <button onClick={copySelected} className="btn">Copiar Selecionados</button>
       </div>
 
+      {/* Exibição de informações sobre a comparação */}
       {comparison && (
-        <div className="mt-6 grid grid-cols-3 gap-4">
-          <div>
+        <div className="mt-6">
+          <p className="text-lg font-semibold text-gray-700">
+            Comparação concluída:
+          </p>
+          <div className="text-sm text-gray-500">
+            <p>Total de Arquivos: {comparison.onlyInA.length + comparison.onlyInB.length + comparison.inBoth.length}</p>
+            <p>Somente na Pasta Virtual: {comparison.onlyInA.length}</p>
+            <p>Somente na Pasta HD Externo: {comparison.onlyInB.length}</p>
+            <p>Em Ambas as Pastas: {comparison.inBoth.length}</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            <div>
+              <FileList
+                title="Somente na Pasta Virtual"
+                files={comparison.onlyInA}
+                onToggle={toggleFile}
+                from="A"
+                setFrom={setFrom}
+                onCopyAll={() => copyAll(comparison.onlyInA, 'A')}
+              />
+            </div>
             <FileList
-              title="Somente na Pasta Virtual"
-              files={comparison.onlyInA}
+              title="Somente na Pasta HD Externo"
+              files={comparison.onlyInB}
               onToggle={toggleFile}
-              from="A"
+              from="B"
               setFrom={setFrom}
-              onCopyAll={() => copyAll(comparison.onlyInA, 'A')}
+              onCopyAll={() => copyAll(comparison.onlyInB, 'B')}
+            />
+            <FileList
+              title="Em Ambas"
+              files={comparison.inBoth}
+              onToggle={toggleFile}
             />
           </div>
-          <FileList
-            title="Somente na Pasta HD Externo"
-            files={comparison.onlyInB}
-            onToggle={toggleFile}
-            from="B"
-            setFrom={setFrom}
-            onCopyAll={() => copyAll(comparison.onlyInB, 'B')}
-          />
-          <FileList
-            title="Em Ambas"
-            files={comparison.inBoth}
-            onToggle={toggleFile}
-          />
         </div>
       )}
 
